@@ -1,18 +1,25 @@
 <template>
-   <div>
-    <button @click="reset">Reset Garden</button>
-    <canvas ref="canvas" width="600" height="400" style="border: 1px solid black;" @click="handleClick"></canvas>
-    </div>
+  <div class="garden-wrapper">
+    <button class="reset-button" @click="reset">Reset Garden</button>
+
+    <canvas
+      ref="canvas"
+      class="garden-canvas"
+      width="600"
+      height="400"
+      @click="handleClick"
+    ></canvas>
+  </div>
 </template>
 
 <script setup>
 import { onMounted, ref } from 'vue'
-import { useApi } from '../components/composables/useapi'
-import { useAudio } from '../components/composables/useaudio'
+
+import { addNode, fetchGardenState, resetGarden } from '../api/gardenApi'
+import { ensureAudio, updateAudio, clearAudio } from '../audio/audioEngine'
+import { renderGarden } from '../visuals/canvasRenderer'
 
 const canvas = ref(null)
-const { sendEvent, fetchState, resetGarden } = useApi()
-const { update, ensureAudio, clearAudio } = useAudio()
 
 let ctx
 let nodes = []
@@ -23,40 +30,74 @@ onMounted(() => {
 })
 
 async function handleClick(event) {
+  console.log('Canvas clicked')
   await ensureAudio()
+  console.log('Audio ensured')
 
   const rect = canvas.value.getBoundingClientRect()
   const x = event.clientX - rect.left
   const y = event.clientY - rect.top
 
-  sendEvent({ type: 'add_node', x, y })
+  console.log('Adding node at:', x, y)
+
+  const result = await addNode(x, y)
+
+  console.log('Node added:', result)
+
+  const state = await fetchGardenState()
+
+  console.log('State after add:', state)
+  console.log('Nodes from backend:', state.nodes)
+
+  nodes = state.nodes
+  console.log('Nodes count:', nodes.length)
+
 }
 
 async function reset() {
   await resetGarden()
   clearAudio()
   nodes = []
-  draw()
+  renderGarden(ctx, nodes, 600, 400)
 }
 
 async function startLoop() {
   while (true) {
-    const state = await fetchState()
+    const state = await fetchGardenState()
     nodes = state.nodes
+    
+    console.log('Nodes from backend:', nodes)
 
-    update(nodes) // 🔊 tie audio to nodes
-    draw()
+    updateAudio(nodes)
+    console.log('Audio updated')
 
-    await new Promise(r => setTimeout(r, 200))
+    renderGarden(ctx, nodes, 600, 400)
+
+    await new Promise(resolve => setTimeout(resolve, 200))
   }
+} 
+</script>
+
+<style scoped>
+.garden-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
 }
 
-function draw() {
-  ctx.clearRect(0, 0, 600, 400)
-  nodes.forEach(node => {
-    ctx.beginPath()
-    ctx.arc(node.x, node.y, 10, 0, Math.PI * 2)
-    ctx.fill()
-  })
+.garden-canvas {
+  width: 600px;
+  height: 400px;
+  background: #071018;
+  border: 2px solid #1f3d2b;
+  border-radius: 12px;
+  cursor: crosshair;
+  display: block;
 }
-</script>
+
+.reset-button {
+  width: fit-content;
+  padding: 8px 12px;
+}
+</style>
