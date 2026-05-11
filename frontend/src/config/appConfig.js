@@ -12,5 +12,5 @@ export const APP_CONFIG = {
 
   harmonics: {
     maxDistance: 200
-  }
+    }
 }

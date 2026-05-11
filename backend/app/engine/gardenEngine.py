@@ -1,5 +1,5 @@
 from backend.app.models.soundNode import SoundNode
-
+from backend.app.engine.pitch_utils import quantize_x_to_pitch
 class SoundEngine:
     def __init__(self):
         self.nodes = []
@@ -13,7 +13,7 @@ class SoundEngine:
             id=len(self.nodes),
             x=event["x"],
             y=event["y"],
-            frequency=200 + event["x"]
+            frequency=quantize_x_to_pitch(event["x"])
             )
 
             print("CREATING NODE:", node)

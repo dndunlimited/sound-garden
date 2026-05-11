@@ -35,7 +35,7 @@ let nodes = []
 
 onMounted(() => {
   ctx = canvas.value.getContext('2d')
-  startLoop()
+  animationLoop()
 })
 
 async function handleClick(event) {
@@ -60,6 +60,7 @@ async function handleClick(event) {
 
   nodes = state.nodes
   console.log('Nodes count:', nodes.length)
+  updateAudio(nodes)
 
 }
 
@@ -75,6 +76,17 @@ async function reset() {
   )
 }
 
+// The animation loop continuously renders the garden state on the canvas
+function animationLoop() {
+  renderGarden(
+    ctx,
+    nodes,
+    APP_CONFIG.canvas.width,
+    APP_CONFIG.canvas.height
+  )
+
+  requestAnimationFrame(animationLoop)
+}
 async function startLoop() {
   while (true) {
     const state = await fetchGardenState()
