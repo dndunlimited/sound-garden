@@ -1,3 +1,5 @@
+from backend.app.models.soundNode import SoundNode
+
 class SoundEngine:
     def __init__(self):
         self.nodes = []
@@ -7,12 +9,13 @@ class SoundEngine:
         print("HANDLE EVENT:", event)
 
         if event["type"] == "add_node":
-            node = {
-                "id": len(self.nodes),
-                "x": event["x"],
-                "y": event["y"],
-                "frequency": 200 + event["x"]
-            }
+            node = SoundNode(
+            id=len(self.nodes),
+            x=event["x"],
+            y=event["y"],
+            frequency=200 + event["x"]
+            )
+
             print("CREATING NODE:", node)
             self.nodes.append(node)
             print("CURRENT NODES:", self.nodes)
@@ -25,7 +28,9 @@ class SoundEngine:
         return {"status": "ignored"}
 
     def get_state(self):
-        return {"nodes": self.nodes}
+        return {
+            "nodes": [node.to_dict() for node in self.nodes]
+        }
 
     def reset(self):
         self.nodes = []

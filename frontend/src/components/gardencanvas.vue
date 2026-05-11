@@ -3,23 +3,32 @@
     <button class="reset-button" @click="reset">Reset Garden</button>
 
     <canvas
-      ref="canvas"
-      class="garden-canvas"
-      width="600"
-      height="400"
-      @click="handleClick"
+       ref="canvas"
+       class="garden-canvas"
+       :width="APP_CONFIG.canvas.width"
+       :height="APP_CONFIG.canvas.height"
+       :style="canvasStyle"
+       @click="handleClick"
     ></canvas>
   </div>
 </template>
 
 <script setup>
 import { onMounted, ref } from 'vue'
-
+import { APP_CONFIG } from '../config/appConfig'
 import { addNode, fetchGardenState, resetGarden } from '../api/gardenApi'
 import { ensureAudio, updateAudio, clearAudio } from '../audio/audioEngine'
 import { renderGarden } from '../visuals/canvasRenderer'
 
 const canvas = ref(null)
+
+// Canvas style is defined as a reactive object to allow dynamic updates if needed
+const canvasStyle = {
+  width: '100%',
+  maxWidth: `${APP_CONFIG.canvas.width}px`,
+  aspectRatio: `${APP_CONFIG.canvas.width} / ${APP_CONFIG.canvas.height}`,
+  background: APP_CONFIG.canvas.background
+}
 
 let ctx
 let nodes = []
@@ -58,7 +67,12 @@ async function reset() {
   await resetGarden()
   clearAudio()
   nodes = []
-  renderGarden(ctx, nodes, 600, 400)
+  renderGarden(
+    ctx,
+    nodes,
+    APP_CONFIG.canvas.width,
+    APP_CONFIG.canvas.height
+  )
 }
 
 async function startLoop() {
@@ -87,12 +101,9 @@ async function startLoop() {
 }
 
 .garden-canvas {
-  width: 600px;
-  height: 400px;
-  background: #071018;
-  border: 2px solid #1f3d2b;
-  border-radius: 12px;
-  cursor: crosshair;
+  border: 2px solid #185f42;
+  border-radius: 15px;
+  cursor: pointer;
   display: block;
 }
 
