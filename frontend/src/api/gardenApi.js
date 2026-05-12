@@ -8,15 +8,29 @@ const api = axios.create({
   baseURL: _baseURL
 })
 
-export async function addNode(x, y, audioMode, harmonicType) {
+export async function addNode(
+  x,
+  y,
+  audioMode,
+  harmonicType,
+  note,
+  octave
+) {
   const res = await api.post('/api/event', {
     type: 'add_node',
     x,
     y,
     audioMode,
-    harmonicType
+    harmonicType,
+    note,
+    octave
   })
 
+  return res.data
+}
+
+export async function fetchPitchGrid() {
+  const res = await api.get('/api/audio/pitch-grid')
   return res.data
 }
 

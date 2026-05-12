@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 from backend.app.engine.gardenEngine import SoundEngine
-from backend.app.engine.pitch_utils import get_harmonic_intervals
+from backend.app.engine.pitch_utils import PitchUtils
 
 
 
@@ -20,8 +20,18 @@ def handle_event(event: dict):
 
 @router.get("/api/audio/harmonic-intervals")
 def get_audio_harmonic_intervals():
+    print("GETTING HARMONIC INTERVALS")
+
     return {
-        "intervals": get_harmonic_intervals()
+        "intervals": PitchUtils.get_harmonic_intervals()
+    }
+
+@router.get("/api/audio/pitch-grid")
+def get_audio_pitch_grid():
+    return {
+        "notes": PitchUtils.get_note_names(),
+        "octaves": PitchUtils.get_octaves(),
+        "grid": PitchUtils.get_pitch_grid()
     }
 
 @router.get("/api/garden/state")

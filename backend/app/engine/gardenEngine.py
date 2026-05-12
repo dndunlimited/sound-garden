@@ -1,5 +1,6 @@
 from backend.app.models.soundNode import SoundNode
-from backend.app.engine.pitch_utils import quantize_x_to_pitch
+from backend.app.engine.pitch_utils import PitchUtils
+
 class SoundEngine:
     def __init__(self):
         self.nodes = []
@@ -13,16 +14,23 @@ class SoundEngine:
             harmonic_type = event.get("harmonicType", "perfect_fifth")
 
             raw_frequency = 200 + event["x"]
-            quantized_frequency = quantize_x_to_pitch(event["x"])
+            quantized_frequency = PitchUtils.quantize_x_to_pitch(event["x"])
+            note = event.get("note", "A")
+            octave = int(event.get("octave", 4))
+
+            frequency = PitchUtils.get_frequency(note, octave)
+            raw_frequency = frequency
 
             node = SoundNode(
                 id=len(self.nodes),
                 x=event["x"],
                 y=event["y"],
-                frequency=quantized_frequency,
+                frequency=frequency,
                 raw_frequency=raw_frequency,
                 audio_mode=audio_mode,
-                harmonic_type=harmonic_type
+                harmonic_type=harmonic_type,
+                note=note,
+                octave=octave
             )
             print("CREATING NODE:", node)
             self.nodes.append(node)

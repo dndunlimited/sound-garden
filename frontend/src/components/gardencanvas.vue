@@ -33,6 +33,33 @@
         </option>
       </select>
     </label>
+    <div class="pitch-controls">
+  <label>
+    Note:
+    <select v-model="selectedNote">
+      <option
+        v-for="note in pitchGrid?.notes || []"
+        :key="note"
+        :value="note"
+      >
+        {{ note }}
+      </option>
+    </select>
+  </label>
+
+  <label>
+    Octave:
+    <select v-model="selectedOctave">
+      <option
+        v-for="octave in pitchGrid?.octaves || []"
+        :key="octave"
+        :value="octave"
+      >
+        {{ octave }}
+      </option>
+    </select>
+  </label>
+</div>
     <canvas
        ref="canvas"
        class="garden-canvas"
@@ -47,7 +74,7 @@
 <script setup>
 import { ref, onMounted, watch} from 'vue'
 import { APP_CONFIG } from '../config/appConfig'
-import { addNode, fetchGardenState, resetGarden, fetchHarmonicIntervals } from '../api/gardenApi'
+import { addNode, fetchGardenState, resetGarden, fetchHarmonicIntervals, fetchPitchGrid } from '../api/gardenApi'
 import { ensureAudio, updateAudio, clearAudio } from '../audio/audioEngine'
 import { renderGarden } from '../visuals/canvasRenderer'
 
@@ -55,6 +82,9 @@ const canvas = ref(null)
 const selectedAudioMode = ref(APP_CONFIG.audio.defaultMode)
 const harmonicIntervals = ref([])
 const selectedHarmonicType = ref('perfect_fifth')
+const pitchGrid = ref(null)
+const selectedNote = ref('A')
+const selectedOctave = ref(4)
 
 // Canvas style is defined as a reactive object to allow dynamic updates if needed
 const canvasStyle = {
@@ -71,6 +101,7 @@ onMounted(async () => {
   ctx = canvas.value.getContext('2d')
 
   harmonicIntervals.value = await fetchHarmonicIntervals()
+  pitchGrid.value = await fetchPitchGrid()
 
   animationLoop()
 })
@@ -86,7 +117,15 @@ async function handleClick(event) {
 
  //console.log('Adding node at:', x, y)
 
-  const result = await addNode(x, y, selectedAudioMode.value, selectedHarmonicType.value)
+  //Update the addNode function to include the new parameters for note and octave
+  const result = await addNode(
+  x,
+  y,
+  selectedAudioMode.value,
+  selectedHarmonicType.value,
+  selectedNote.value,
+  selectedOctave.value
+)
 
   //console.log('Node added:', result)
 
@@ -121,7 +160,8 @@ function animationLoop() {
     nodes,
     APP_CONFIG.canvas.width,
     APP_CONFIG.canvas.height,
-    selectedAudioMode.value
+    selectedAudioMode.value,
+    pitchGrid.value
   )
 
   requestAnimationFrame(animationLoop)
@@ -145,6 +185,24 @@ async function startLoop() {
 
 <!--  CSS FOR CANVAS AND CONTROLS -->
 <style scoped>
+.pitch-controls {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  color: rgb(0, 0, 0);
+  margin-bottom: 8px;
+  background: white;
+}
+
+.pitch-controls label {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.pitch-controls select {
+  padding: 4px 8px;
+}
 .garden-wrapper {
   display: flex;
   flex-direction: column;
