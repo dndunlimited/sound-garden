@@ -9,13 +9,21 @@ class SoundEngine:
         print("HANDLE EVENT:", event)
 
         if event["type"] == "add_node":
-            node = SoundNode(
-            id=len(self.nodes),
-            x=event["x"],
-            y=event["y"],
-            frequency=quantize_x_to_pitch(event["x"])
-            )
+            audio_mode = event.get("audioMode", "harmonics")
+            harmonic_type = event.get("harmonicType", "perfect_fifth")
 
+            raw_frequency = 200 + event["x"]
+            quantized_frequency = quantize_x_to_pitch(event["x"])
+
+            node = SoundNode(
+                id=len(self.nodes),
+                x=event["x"],
+                y=event["y"],
+                frequency=quantized_frequency,
+                raw_frequency=raw_frequency,
+                audio_mode=audio_mode,
+                harmonic_type=harmonic_type
+            )
             print("CREATING NODE:", node)
             self.nodes.append(node)
             print("CURRENT NODES:", self.nodes)

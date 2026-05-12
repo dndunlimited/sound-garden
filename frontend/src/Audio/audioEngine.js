@@ -1,4 +1,4 @@
-import { calculateHarmonicVoices } from './harmonicEngine'
+import { calculateVoices } from './audioModeEngine'
 import { APP_CONFIG } from '../config/appConfig'
 
 let ctx
@@ -19,7 +19,7 @@ export async function ensureAudio() {
 }
 
 //updates audio voices for all nodes based on their current state and proximity to others
-export function updateAudio(nodes) {
+export function updateAudio(nodes, mode) {
   if (!ctx || !isStarted) return
 
   nodes.forEach(node => {
@@ -28,7 +28,7 @@ export function updateAudio(nodes) {
     }
 
     const voiceGroup = activeNodes.get(node.id)
-    const voices = calculateHarmonicVoices(node, nodes)
+    const voices = calculateVoices(node,nodes,node.audioMode ?? mode)
 
     updateVoiceGroup(voiceGroup, voices)
   })
@@ -46,6 +46,7 @@ function createNodeVoiceGroup(node) {
 
 // Calculates the frequencies and gains for a node's harmonic voices based on nearby nodes
 function updateVoiceGroup(group, voices) {
+  // Update the root voice
   group.root.osc.frequency.setTargetAtTime(
     voices.root.frequency,
     ctx.currentTime,
@@ -58,15 +59,28 @@ function updateVoiceGroup(group, voices) {
     0.05
   )
 
+  // If this specific node should have no harmonics, stop only this node's harmonic voices.
+  if (voices.harmonics.length === 0) {
+    while (group.harmonics.length > 0) {
+      const voice = group.harmonics.pop()
+      stopVoice(voice)
+    }
+
+    return
+  }
+
+  // Add harmonic voices if this node needs more.
   while (group.harmonics.length < voices.harmonics.length) {
     group.harmonics.push(createOscillatorVoice(440, 0))
   }
 
+  // Remove extra harmonic voices if this node needs fewer.
   while (group.harmonics.length > voices.harmonics.length) {
     const voice = group.harmonics.pop()
     stopVoice(voice)
   }
 
+  // Update this node's harmonic voices.
   voices.harmonics.forEach((voiceData, index) => {
     const voice = group.harmonics[index]
 

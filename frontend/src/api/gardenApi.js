@@ -8,11 +8,13 @@ const api = axios.create({
   baseURL: _baseURL
 })
 
-export async function addNode(x, y) {
+export async function addNode(x, y, audioMode, harmonicType) {
   const res = await api.post('/api/event', {
     type: 'add_node',
     x,
-    y
+    y,
+    audioMode,
+    harmonicType
   })
 
   return res.data
@@ -25,4 +27,9 @@ export async function fetchGardenState() {
 
 export async function resetGarden() {
   return api.post('/api/garden/reset')
+}
+
+export async function fetchHarmonicIntervals() {
+  const res = await api.get('/api/audio/harmonic-intervals')
+  return res.data.intervals
 }
