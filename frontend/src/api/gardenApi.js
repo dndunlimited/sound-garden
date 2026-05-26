@@ -14,7 +14,8 @@ export async function addNode(
   audioMode,
   harmonicType,
   note,
-  octave
+  octave,
+  pitchSource = 'dropdown'
 ) {
   const res = await api.post('/api/event', {
     type: 'add_node',
@@ -23,7 +24,8 @@ export async function addNode(
     audioMode,
     harmonicType,
     note,
-    octave
+    octave,
+    pitchSource
   })
 
   return res.data

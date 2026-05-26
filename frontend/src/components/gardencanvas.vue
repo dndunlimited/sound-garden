@@ -34,7 +34,7 @@
       </select>
     </label>
     <div class="pitch-controls">
-  <label>
+  <label v-if="selectedAudioMode === APP_CONFIG.audio.modes.NOTES">
     Note:
     <select v-model="selectedNote">
       <option
@@ -97,6 +97,13 @@ const canvasStyle = {
 let ctx
 let nodes = []
 
+function shouldUseCanvasNote(mode) {
+  return (
+    mode !== APP_CONFIG.audio.modes.NOTES &&
+    mode !== APP_CONFIG.audio.modes.TUNER
+  )
+}
+
 onMounted(async () => {
   ctx = canvas.value.getContext('2d')
 
@@ -112,8 +119,9 @@ async function handleClick(event) {
  //console.log('Audio ensured')
 
   const rect = canvas.value.getBoundingClientRect()
-  const x = event.clientX - rect.left
-  const y = event.clientY - rect.top
+  const x = (event.clientX - rect.left) * (APP_CONFIG.canvas.width / rect.width)
+  const y = (event.clientY - rect.top) * (APP_CONFIG.canvas.height / rect.height)
+  const pitchSource = shouldUseCanvasNote(selectedAudioMode.value) ? 'canvas' : 'dropdown'
 
  //console.log('Adding node at:', x, y)
 
@@ -124,7 +132,8 @@ async function handleClick(event) {
   selectedAudioMode.value,
   selectedHarmonicType.value,
   selectedNote.value,
-  selectedOctave.value
+  selectedOctave.value,
+  pitchSource
 )
 
   //console.log('Node added:', result)

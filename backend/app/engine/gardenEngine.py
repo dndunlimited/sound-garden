@@ -5,6 +5,23 @@ class SoundEngine:
     def __init__(self):
         self.nodes = []
 
+    def get_canvas_pitch(self, x, y):
+        notes = PitchUtils.get_note_names()
+        octaves = PitchUtils.get_octaves()
+        canvas_width = 600
+        canvas_height = 400
+        column_width = canvas_width / len(notes)
+        row_height = canvas_height / len(octaves)
+        note_index = int(max(0, min(len(notes) - 1, x // column_width)))
+        octave_index = int(max(0, min(len(octaves) - 1, y // row_height)))
+        note = notes[note_index]
+        octave = octaves[octave_index]
+
+        if note in ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#"]:
+            return note, octave + 1
+
+        return note, octave
+
     def handle_event(self, event):
         
         print("HANDLE EVENT:", event)
@@ -17,6 +34,9 @@ class SoundEngine:
             quantized_frequency = PitchUtils.quantize_x_to_pitch(event["x"])
             note = event.get("note", "A")
             octave = int(event.get("octave", 4))
+
+            if event.get("pitchSource") == "canvas":
+                note, octave = self.get_canvas_pitch(event["x"], event["y"])
 
             frequency = PitchUtils.get_frequency(note, octave)
             raw_frequency = frequency
