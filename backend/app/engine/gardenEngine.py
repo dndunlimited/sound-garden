@@ -10,7 +10,7 @@ class SoundEngine:
         print("HANDLE EVENT:", event)
 
         if event["type"] == "add_node":
-            audio_mode = event.get("audioMode", "harmonics")
+            audio_mode = event.get("audioMode", "notes")
             harmonic_type = event.get("harmonicType", "perfect_fifth")
 
             raw_frequency = 200 + event["x"]

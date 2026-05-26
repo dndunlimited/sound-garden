@@ -7,7 +7,7 @@ class SoundNode:
         y,
         frequency,
         raw_frequency=None,
-        audio_mode="harmonics",
+        audio_mode="notes",
         harmonic_type="perfect_fifth",
         note="A",
         octave=4

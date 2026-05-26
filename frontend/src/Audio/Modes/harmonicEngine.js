@@ -2,7 +2,7 @@ import { APP_CONFIG } from '../../config/appConfig'
 import { distance } from '../pitchUtils'
 
 function normalizeMode(mode) {
-  return (mode ?? APP_CONFIG.audio.modes.HARMONICS).toLowerCase()
+  return (mode ?? APP_CONFIG.audio.modes.NOTES).toLowerCase()
 }
 
 function isHarmonicsNode(node) {

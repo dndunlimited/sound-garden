@@ -23,7 +23,7 @@ export const APP_CONFIG = {
       noise: 'Noise'
     },
 
-    defaultMode: 'harmonics'
+    defaultMode: 'notes'
   },
 
   harmonics: {
