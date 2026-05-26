@@ -100,7 +100,7 @@ class PitchUtils:
     def get_harmonic_intervals():
         return PitchUtils.HARMONIC_INTERVALS
     
-    def quantize_x_to_pitch(x, canvas_width=600):
+    def quantize_x_to_pitch(x, canvas_width=900):
         x = max(0, min(canvas_width, x))
 
         index = round((x / canvas_width) * (len(PitchUtils.NOTES) - 1))
@@ -132,9 +132,16 @@ class PitchUtils:
     def get_note_names():
         return PitchUtils.NOTE_NAMES_SHARP
 
+    def get_canvas_note_names():
+        return PitchUtils.NOTE_NAMES_SHARP + ["A"]
+
 
     def get_octaves():
-        return [3, 4, 5]
+        return [2, 3, 4, 5, 6]
+
+
+    def get_canvas_octaves():
+        return [2, 3, 4, 5]
 
 
     def get_pitch_grid():

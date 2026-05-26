@@ -10,7 +10,11 @@ class SoundNode:
         audio_mode="notes",
         harmonic_type="perfect_fifth",
         note="A",
-        octave=4
+        octave=4,
+        sound_type="pitch",
+        plant_type="glow_bloom",
+        visual_type="plant",
+        is_muted=False
     ):
         self.id = id
         self.x = x
@@ -21,6 +25,10 @@ class SoundNode:
         self.harmonic_type = harmonic_type
         self.note = note
         self.octave = octave
+        self.sound_type = sound_type
+        self.plant_type = plant_type
+        self.visual_type = visual_type
+        self.is_muted = is_muted
 
     def to_dict(self):
         return {
@@ -32,5 +40,9 @@ class SoundNode:
             "audioMode": self.audio_mode,
             "harmonicType": self.harmonic_type,
             "note": self.note,
-            "octave": self.octave
+            "octave": self.octave,
+            "soundType": self.sound_type,
+            "plantType": self.plant_type,
+            "visualType": self.visual_type,
+            "isMuted": self.is_muted
         }

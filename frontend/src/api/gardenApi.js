@@ -15,7 +15,13 @@ export async function addNode(
   harmonicType,
   note,
   octave,
-  pitchSource = 'dropdown'
+  pitchSource = 'dropdown',
+  startX = x,
+  startY = y,
+  plantType = 'glow_bloom',
+  visualType = 'plant',
+  isMuted = false,
+  soundType = 'pitch'
 ) {
   const res = await api.post('/api/event', {
     type: 'add_node',
@@ -25,7 +31,13 @@ export async function addNode(
     harmonicType,
     note,
     octave,
-    pitchSource
+    pitchSource,
+    startX,
+    startY,
+    plantType,
+    visualType,
+    isMuted,
+    soundType
   })
 
   return res.data
@@ -43,6 +55,14 @@ export async function fetchGardenState() {
 
 export async function resetGarden() {
   return api.post('/api/garden/reset')
+}
+
+export async function removeLastNode() {
+  const res = await api.post('/api/event', {
+    type: 'remove_last_node'
+  })
+
+  return res.data
 }
 
 export async function fetchHarmonicIntervals() {

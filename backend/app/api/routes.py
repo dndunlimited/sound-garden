@@ -30,7 +30,9 @@ def get_audio_harmonic_intervals():
 def get_audio_pitch_grid():
     return {
         "notes": PitchUtils.get_note_names(),
+        "canvasNotes": PitchUtils.get_canvas_note_names(),
         "octaves": PitchUtils.get_octaves(),
+        "canvasOctaves": PitchUtils.get_canvas_octaves(),
         "grid": PitchUtils.get_pitch_grid()
     }
 
