@@ -6,7 +6,6 @@ import { calculateTunerVoices } from './Modes/tunerEngine'
 export function calculateVoices(node, nodes, mode) {
   const resolvedMode = node.audioMode ?? mode
   const resolvedSoundType = node.soundType ?? APP_CONFIG.audio.soundTypes.PITCH
-  console.log('Audio mode:', resolvedMode)
 
   if (
     resolvedSoundType === APP_CONFIG.audio.soundTypes.VIDEOG

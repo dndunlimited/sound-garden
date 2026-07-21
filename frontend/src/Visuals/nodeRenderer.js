@@ -1,6 +1,9 @@
 import { mapFrequencyToHue } from './colorUtils'
 import { getPlantType } from './plantCatalog'
 import { getMushroomType } from './mushroomCatalog'
+import { getVisualAssetFileUrl } from '../api/visualAssetApi'
+
+const visualAssetImages = new Map()
 
 export function drawNode(ctx, node, time = performance.now()) {
   if (!node) return
@@ -16,9 +19,13 @@ export function drawNode(ctx, node, time = performance.now()) {
   }
 
   const hue = mapFrequencyToHue(frequency)
+  const glowEnabled = node.isGlowEnabled ?? true
+  const motionEnabled = node.isMotionEnabled ?? true
   const pulseSpeed = 0.003
   const pulseAmount = 6
-  const pulse = Math.sin(time * pulseSpeed + id) * pulseAmount
+  const pulse = motionEnabled
+    ? Math.sin(time * pulseSpeed + id) * pulseAmount
+    : 0
   const radius = Math.max(4, 18 + pulse)
   const glowRadius = Math.max(6, (32 + pulse * 1.5) * 0.72)
 
@@ -28,45 +35,100 @@ export function drawNode(ctx, node, time = performance.now()) {
   }
 
   ctx.save()
-  drawGlow(ctx, x, y, hue, glowRadius)
-  if (node.visualType === 'mushroom') {
+  if (node.visualType === 'asset') {
+    if (glowEnabled) {
+      drawGlow(ctx, x, y - radius * 1.2, hue, glowRadius)
+    }
+    drawVisualAsset(ctx, x, y, node.visualAssetId, radius)
+  } else if (node.visualType === 'mushroom') {
     const mushroom = getMushroomType(node.plantType)
-    const mushroomPulse = Math.sin(time * pulseSpeed * 0.5 + id) * pulseAmount
+    const mushroomPulse = motionEnabled
+      ? Math.sin(time * pulseSpeed * 0.5 + id) * pulseAmount
+      : 0
     const mushroomStemRadius = 18 * mushroom.scale
     const mushroomCapRadius = Math.max(4, 18 + mushroomPulse) * mushroom.scale
 
-    drawMushroom(ctx, x, y, hue, mushroomStemRadius, mushroomCapRadius, mushroom, mushroomPulse)
+    if (glowEnabled) {
+      drawGlow(ctx, x, y - getMushroomStemHeight(mushroomStemRadius, mushroom.stem), hue, glowRadius)
+    }
+    drawMushroom(ctx, x, y, hue, mushroomStemRadius, mushroomCapRadius, mushroom, mushroomPulse, motionEnabled)
   } else {
     const plant = getPlantType(node.plantType)
+    const bloomY = y - getPlantStemHeight(plant)
+
+    if (glowEnabled) {
+      drawGlow(ctx, x, bloomY, hue, glowRadius)
+    }
     drawStemAndLeaves(ctx, x, y, plant, pulse)
-    drawBloom(ctx, x, y, hue, radius * plant.scale, plant, pulse)
+    drawBloom(ctx, x, bloomY, hue, radius * plant.scale, plant, pulse)
   }
   ctx.restore()
 }
 
-function drawMushroom(ctx, x, y, hue, stemRadius, capRadius, mushroom, pulse) {
+function drawVisualAsset(ctx, x, y, visualAssetId, radius) {
+  const image = getVisualAssetImage(visualAssetId)
+  const size = Math.max(28, radius * 2.4)
+
+  if (!image || !image.complete || image.naturalWidth === 0) {
+    ctx.fillStyle = 'rgba(235, 244, 225, 0.88)'
+    ctx.strokeStyle = 'rgba(40, 81, 48, 0.48)'
+    ctx.lineWidth = 1.2
+    ctx.beginPath()
+    ctx.roundRect(x - size * 0.5, y - size, size, size, 6)
+    ctx.fill()
+    ctx.stroke()
+    return
+  }
+
+  const sourceRatio = image.naturalWidth / image.naturalHeight
+  const drawWidth = sourceRatio >= 1 ? size : size * sourceRatio
+  const drawHeight = sourceRatio >= 1 ? size / sourceRatio : size
+
+  ctx.save()
+  ctx.beginPath()
+  ctx.roundRect(x - drawWidth * 0.5, y - drawHeight, drawWidth, drawHeight, 6)
+  ctx.clip()
+  ctx.drawImage(image, x - drawWidth * 0.5, y - drawHeight, drawWidth, drawHeight)
+  ctx.restore()
+}
+
+function getVisualAssetImage(visualAssetId) {
+  if (!visualAssetId) return null
+
+  if (!visualAssetImages.has(visualAssetId)) {
+    const image = new Image()
+
+    image.src = getVisualAssetFileUrl(visualAssetId)
+    visualAssetImages.set(visualAssetId, image)
+  }
+
+  return visualAssetImages.get(visualAssetId)
+}
+
+function drawMushroom(ctx, x, y, hue, stemRadius, capRadius, mushroom, pulse, motionEnabled) {
   if (mushroom.cap === 'cluster') {
-    drawMushroomCluster(ctx, x, y, hue, stemRadius, capRadius, mushroom, pulse)
+    drawMushroomCluster(ctx, x, y, hue, stemRadius, capRadius, mushroom, pulse, motionEnabled)
     return
   }
 
   if (mushroom.cap === 'twin') {
-    drawMushroomBody(ctx, x - stemRadius * 0.34, y + stemRadius * 0.06, hue + 12, stemRadius * 0.78, capRadius * 0.78, mushroom, pulse)
-    drawMushroomBody(ctx, x + stemRadius * 0.28, y - stemRadius * 0.04, hue - 14, stemRadius * 0.92, capRadius * 0.92, mushroom, pulse)
+    drawMushroomBody(ctx, x - stemRadius * 0.34, y, hue + 12, stemRadius * 0.78, capRadius * 0.78, mushroom, pulse, motionEnabled)
+    drawMushroomBody(ctx, x + stemRadius * 0.28, y, hue - 14, stemRadius * 0.92, capRadius * 0.92, mushroom, pulse, motionEnabled)
     return
   }
 
-  drawMushroomBody(ctx, x, y, hue, stemRadius, capRadius, mushroom, pulse)
+  drawMushroomBody(ctx, x, y, hue, stemRadius, capRadius, mushroom, pulse, motionEnabled)
 }
 
-function drawMushroomBody(ctx, x, y, hue, stemRadius, capRadius, mushroom, pulse) {
+function drawMushroomBody(ctx, x, y, hue, stemRadius, capRadius, mushroom, pulse, motionEnabled) {
   const stemHeight = getMushroomStemHeight(stemRadius, mushroom.stem)
   const stemWidth = getMushroomStemWidth(stemRadius, mushroom.stem)
-  const lean = Math.sin(pulse * 0.18 + stemRadius) * 2
+  const lean = motionEnabled ? Math.sin(pulse * 0.18 + stemRadius) * 2 : 0
+  const capY = y - stemHeight
   const capX = x + lean
-  const stemTopY = y + stemRadius * 0.05
-  const stemMidY = y + stemHeight * 0.5
-  const stemBaseY = y + stemHeight
+  const stemTopY = capY + stemRadius * 0.05
+  const stemMidY = capY + stemHeight * 0.5
+  const stemBaseY = y
   const lowerLean = lean * 0.12
 
   const stemGradient = ctx.createLinearGradient(x - stemWidth, stemTopY, x + stemWidth, stemBaseY)
@@ -77,11 +139,11 @@ function drawMushroomBody(ctx, x, y, hue, stemRadius, capRadius, mushroom, pulse
   ctx.fillStyle = stemGradient
   ctx.beginPath()
   ctx.moveTo(x - stemWidth * 0.55, stemBaseY)
-  ctx.quadraticCurveTo(x - stemWidth * 0.66, y + stemHeight * 0.74, x - stemWidth * 0.52 + lowerLean, stemMidY)
-  ctx.quadraticCurveTo(capX - stemWidth * 0.58, y + stemHeight * 0.24, capX - stemWidth * 0.28, stemTopY)
+  ctx.quadraticCurveTo(x - stemWidth * 0.66, capY + stemHeight * 0.74, x - stemWidth * 0.52 + lowerLean, stemMidY)
+  ctx.quadraticCurveTo(capX - stemWidth * 0.58, capY + stemHeight * 0.24, capX - stemWidth * 0.28, stemTopY)
   ctx.lineTo(capX + stemWidth * 0.28, stemTopY)
-  ctx.quadraticCurveTo(capX + stemWidth * 0.58, y + stemHeight * 0.24, x + stemWidth * 0.52 + lowerLean, stemMidY)
-  ctx.quadraticCurveTo(x + stemWidth * 0.66, y + stemHeight * 0.74, x + stemWidth * 0.55, stemBaseY)
+  ctx.quadraticCurveTo(capX + stemWidth * 0.58, capY + stemHeight * 0.24, x + stemWidth * 0.52 + lowerLean, stemMidY)
+  ctx.quadraticCurveTo(x + stemWidth * 0.66, capY + stemHeight * 0.74, x + stemWidth * 0.55, stemBaseY)
   ctx.closePath()
   ctx.fill()
 
@@ -96,8 +158,8 @@ function drawMushroomBody(ctx, x, y, hue, stemRadius, capRadius, mushroom, pulse
   ctx.quadraticCurveTo(x + lowerLean, stemMidY, x + stemWidth * 0.08, stemBaseY - stemRadius * 0.12)
   ctx.stroke()
 
-  drawMushroomCap(ctx, capX, y, hue, capRadius, mushroom)
-  drawMushroomSpots(ctx, capX, y, hue, capRadius, mushroom)
+  drawMushroomCap(ctx, capX, capY, hue, capRadius, mushroom)
+  drawMushroomSpots(ctx, capX, capY, hue, capRadius, mushroom)
 }
 
 function getMushroomStemHeight(radius, stem) {
@@ -217,19 +279,20 @@ function drawMushroomSpots(ctx, x, y, hue, radius, mushroom) {
   }
 }
 
-function drawMushroomCluster(ctx, x, y, hue, stemRadius, capRadius, mushroom, pulse) {
+function drawMushroomCluster(ctx, x, y, hue, stemRadius, capRadius, mushroom, pulse, motionEnabled) {
   for (let i = -2; i <= 2; i += 1) {
     const childStemRadius = stemRadius * (0.56 + (2 - Math.abs(i)) * 0.09)
     const childCapRadius = capRadius * (0.56 + (2 - Math.abs(i)) * 0.09)
     drawMushroomBody(
       ctx,
       x + i * stemRadius * 0.32,
-      y + Math.abs(i) * stemRadius * 0.18,
+      y,
       hue + i * 14,
       childStemRadius,
       childCapRadius,
       { ...mushroom, cap: i % 2 === 0 ? 'bell' : 'round', stem: 'thin', spots: 1 },
-      pulse + i
+      pulse + i,
+      motionEnabled
     )
   }
 }
@@ -253,21 +316,22 @@ function drawMorelTexture(ctx, x, y, hue, radius) {
 }
 
 function drawStemAndLeaves(ctx, x, y, plant, pulse) {
+  const height = getPlantStemHeight(plant)
   const prominenceScale = 1.15
-  const height = (34 + plant.leafCount * 3) * prominenceScale
+  const bloomY = y - height
   const curve = Math.sin(pulse * 0.2 + plant.leafCount) * 5
 
   ctx.strokeStyle = 'rgba(48, 110, 52, 0.74)'
   ctx.lineWidth = (plant.bloom === 'reed' ? 1.4 : 2) * prominenceScale * 1.3
   ctx.beginPath()
-  ctx.moveTo(x, y + 5)
-  ctx.quadraticCurveTo(x + curve, y + height * 0.55, x - curve * 0.35, y + height)
+  ctx.moveTo(x, bloomY + 5)
+  ctx.quadraticCurveTo(x + curve, bloomY + height * 0.55, x - curve * 0.35, y)
   ctx.stroke()
 
   ctx.fillStyle = 'rgba(76, 132, 58, 0.82)'
   for (let i = 0; i < plant.leafCount; i += 1) {
     const side = i % 2 === 0 ? 1 : -1
-    const leafY = y + (16 + i * 5) * prominenceScale
+    const leafY = bloomY + (16 + i * 5) * prominenceScale
     const leafX = x + side * (5 + i * 0.8) * prominenceScale
 
     ctx.beginPath()
@@ -282,6 +346,10 @@ function drawStemAndLeaves(ctx, x, y, plant, pulse) {
     )
     ctx.fill()
   }
+}
+
+function getPlantStemHeight(plant) {
+  return (34 + plant.leafCount * 3) * 1.15
 }
 
 function drawGlow(ctx, x, y, hue, glowRadius) {

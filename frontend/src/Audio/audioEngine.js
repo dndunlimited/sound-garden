@@ -1,10 +1,12 @@
 import { calculateVoices } from './audioModeEngine'
 import { APP_CONFIG } from '../config/appConfig'
+import { getSavedSound } from './soundLibrary'
 
 let ctx
 let isStarted = false
 
 const activeNodes = new Map()
+const sampleBufferCache = new Map()
 let previewVoice = null
 
 //Verifies audio context is initialized and resumed on user interaction
@@ -31,14 +33,26 @@ export function updateAudio(nodes, mode, maxAudibleNodes = APP_CONFIG.audio.defa
   const gainScale = getMixGainScale(audibleNodes.length)
 
   audibleNodes.forEach(node => {
+    const existingGroup = activeNodes.get(node.id)
+
+    if (existingGroup && shouldRecreateVoiceGroup(existingGroup, node)) {
+      stopVoiceGroup(existingGroup)
+      activeNodes.delete(node.id)
+    }
+
     if (!activeNodes.has(node.id)) {
       activeNodes.set(node.id, createNodeVoiceGroup(node))
     }
 
     const voiceGroup = activeNodes.get(node.id)
-    const voices = calculateVoices(node, audibleNodes, node.audioMode ?? mode)
 
-    updateVoiceGroup(voiceGroup, voices, gainScale)
+    if (voiceGroup.kind === 'sample') {
+      updateSampleVoiceGroup(voiceGroup, node.frequency, gainScale)
+    } else {
+      const voices = calculateVoices(node, audibleNodes, node.audioMode ?? mode)
+
+      updateVoiceGroup(voiceGroup, voices, gainScale)
+    }
   })
 
   stopRemovedNodes(audibleNodes)
@@ -52,32 +66,43 @@ function getMixGainScale(nodeCount) {
   return Math.max(APP_CONFIG.audio.minMixGainScale, scale)
 }
 
-export function startPreviewVoice(frequency, soundType = APP_CONFIG.audio.soundTypes.PITCH) {
+export function startPreviewVoice(
+  frequency,
+  soundType = APP_CONFIG.audio.soundTypes.PITCH,
+  sampleId = null,
+  samplePlaybackMode = 'pitched'
+) {
   if (!ctx || !isStarted) return
 
   stopPreviewVoice()
-  previewVoice = createPreviewVoiceGroup(frequency, soundType)
+  previewVoice = soundType === APP_CONFIG.audio.soundTypes.SAMPLE && sampleId
+    ? createSampleVoiceGroup({ frequency, sampleId, samplePlaybackMode }, APP_CONFIG.audio.defaultGain)
+    : createPreviewVoiceGroup(frequency, soundType)
 }
 
 export function updatePreviewVoice(frequency) {
   if (!ctx || !isStarted || !previewVoice) return
 
-  const previewVoices = getPreviewVoices(frequency, previewVoice.soundType)
+  if (previewVoice.kind === 'sample') {
+    updateSampleVoiceGroup(previewVoice, frequency)
+    return
+  }
 
+  const previewVoices = getPreviewVoices(frequency, previewVoice.soundType)
   updateVoiceGroup(previewVoice, previewVoices)
 }
 
 export function stopPreviewVoice() {
   if (!previewVoice) return
 
-  stopVoice(previewVoice.root)
-  previewVoice.harmonics.forEach(stopVoice)
+  stopVoiceGroup(previewVoice)
   previewVoice = null
 }
 
 function createPreviewVoiceGroup(frequency, soundType) {
   const voices = getPreviewVoices(frequency, soundType)
   const group = {
+    kind: 'oscillator',
     soundType,
     root: createOscillatorVoice(
       voices.root.frequency,
@@ -160,12 +185,110 @@ function getPreviewVoices(frequency, soundType) {
   }
 }
 
+function shouldRecreateVoiceGroup(group, node) {
+  const needsSample = node.soundType === APP_CONFIG.audio.soundTypes.SAMPLE && node.sampleId
+
+  if (needsSample) {
+    return (
+      group.kind !== 'sample' ||
+      group.sampleId !== node.sampleId ||
+      group.samplePlaybackMode !== getSamplePlaybackMode(node)
+    )
+  }
+
+  return group.kind === 'sample'
+}
+
 // Generates a set of voices for a node, including its main frequency and any harmonic shifts
 function createNodeVoiceGroup(node) {
+  if (node.soundType === APP_CONFIG.audio.soundTypes.SAMPLE && node.sampleId) {
+    return createSampleVoiceGroup(node, APP_CONFIG.audio.defaultGain)
+  }
+
   return {
+    kind: 'oscillator',
     root: createOscillatorVoice(node.frequency, APP_CONFIG.audio.defaultGain),
     harmonics: []
   }
+}
+
+function createSampleVoiceGroup(node, gainValue) {
+  const gain = ctx.createGain()
+  const group = {
+    kind: 'sample',
+    sampleId: node.sampleId,
+    samplePlaybackMode: getSamplePlaybackMode(node),
+    frequency: node.frequency,
+    source: null,
+    gain,
+    stopped: false
+  }
+
+  gain.gain.value = gainValue
+  gain.connect(ctx.destination)
+
+  ensureSampleBuffer(node.sampleId).then(buffer => {
+    if (group.stopped || !buffer) return
+
+    group.source = createSampleSource(buffer, group.frequency, group.samplePlaybackMode)
+    group.source.connect(gain)
+    group.source.start()
+  }).catch(error => {
+    console.warn('Unable to play saved sound:', error)
+  })
+
+  return group
+}
+
+function createSampleSource(buffer, frequency, samplePlaybackMode) {
+  const source = ctx.createBufferSource()
+
+  source.buffer = buffer
+  source.loop = true
+  source.playbackRate.value = getSamplePlaybackRate(frequency, samplePlaybackMode)
+
+  return source
+}
+
+async function ensureSampleBuffer(sampleId) {
+  if (sampleBufferCache.has(sampleId)) return sampleBufferCache.get(sampleId)
+
+  const sound = await getSavedSound(sampleId)
+  if (!sound) return null
+
+  const arrayBuffer = await sound.blob.arrayBuffer()
+  const audioBuffer = await ctx.decodeAudioData(arrayBuffer)
+
+  sampleBufferCache.set(sampleId, audioBuffer)
+
+  return audioBuffer
+}
+
+function updateSampleVoiceGroup(group, frequency, gainScale = 1) {
+  group.frequency = frequency
+  group.gain.gain.setTargetAtTime(
+    APP_CONFIG.audio.defaultGain * gainScale,
+    ctx.currentTime,
+    0.05
+  )
+
+  if (group.source) {
+    group.source.playbackRate.setTargetAtTime(
+      getSamplePlaybackRate(frequency, group.samplePlaybackMode),
+      ctx.currentTime,
+      0.05
+    )
+  }
+}
+
+function getSamplePlaybackMode(node) {
+  return node.samplePlaybackMode === 'raw' ? 'raw' : 'pitched'
+}
+
+function getSamplePlaybackRate(frequency, samplePlaybackMode = 'pitched') {
+  if (samplePlaybackMode === 'raw') return 1
+
+  return Math.max(0.125, Math.min(4, frequency / 440))
 }
 
 // Calculates the frequencies and gains for a node's harmonic voices based on nearby nodes
@@ -235,25 +358,6 @@ function updateVoiceGroup(group, voices, gainScale = 1) {
   })
 }
 
-// Creates a single oscillator voice with the specified frequency and gain
-function createVoice(node) {
-
-  console.log('Creating audio voice for node:', node)
-  const osc = ctx.createOscillator()
-  const gain = ctx.createGain()
-
-  osc.type = 'sine'
-  osc.frequency.value = node.frequency
-  gain.gain.value = 0.05
-
-  osc.connect(gain)
-  gain.connect(ctx.destination)
-
-  osc.start()
-
-  activeNodes.set(node.id, { osc, gain })
-}
-
 // Calculates the harmonic frequencies and gains for a node based on its proximity to other nodes
 function createOscillatorVoice(frequency, gainValue, type = 'sine', detune = 0) {
   const osc = ctx.createOscillator()
@@ -280,15 +384,31 @@ function stopVoice(voice) {
   }, 80)
 }
 
+function stopVoiceGroup(group) {
+  if (group.kind === 'sample') {
+    group.stopped = true
+    group.gain.gain.setTargetAtTime(0, ctx.currentTime, 0.03)
+
+    if (group.source) {
+      setTimeout(() => {
+        group.source.stop()
+      }, 80)
+    }
+
+    return
+  }
+
+  stopVoice(group.root)
+  group.harmonics.forEach(stopVoice)
+}
+
 // Stops voices for nodes that have been removed from the garden
 function stopRemovedNodes(nodes) {
   const ids = nodes.map(node => node.id)
 
   for (const [id, group] of activeNodes.entries()) {
     if (!ids.includes(id)) {
-      stopVoice(group.root)
-
-      group.harmonics.forEach(stopVoice)
+      stopVoiceGroup(group)
 
       activeNodes.delete(id)
     }
@@ -300,8 +420,7 @@ export function clearAudio() {
   stopPreviewVoice()
 
   for (const group of activeNodes.values()) {
-    stopVoice(group.root)
-    group.harmonics.forEach(stopVoice)
+    stopVoiceGroup(group)
   }
 
   activeNodes.clear()

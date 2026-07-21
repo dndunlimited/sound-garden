@@ -1,24 +1,26 @@
 import { APP_CONFIG } from '../config/appConfig'
-import gardenBackgroundUrl from '../assets/garden-canvas-bg.png'
-import { drawGardenBackground } from './gardenBackgroundRenderer'
 import { drawHarmonicConnections } from './harmonicRenderer'
 import { drawNode } from './nodeRenderer'
-import { drawPitchGrid } from './pitchGridRenderer'
-
-const gardenBackgroundImage = new Image()
-gardenBackgroundImage.src = gardenBackgroundUrl
+import { drawImageCoordinateGrid, drawPitchGrid } from './pitchGridRenderer'
 
 export function clearCanvas(ctx, width, height) {
   ctx.clearRect(0, 0, width, height)
 }
 
-export function renderGarden(ctx,nodes,width,height,mode,pitchGrid) {
+export function renderGarden(
+  ctx,
+  nodes,
+  width,
+  height,
+  mode,
+  pitchGrid,
+  gridDisplay = APP_CONFIG.canvas.defaultGridDisplay
+) {
   ctx.clearRect(0, 0, width, height)
 
   const time = performance.now()
 
-  drawImageBackground(ctx, width, height, time)
-  drawPitchGrid(ctx, pitchGrid, width, height)
+  drawGridOverlay(ctx, width, height, pitchGrid, gridDisplay)
 
   if (mode === APP_CONFIG.audio.modes.HARMONICS) {
     drawHarmonicConnections(ctx, nodes, time)
@@ -31,39 +33,18 @@ export function renderGarden(ctx,nodes,width,height,mode,pitchGrid) {
   })
 }
 
-function drawImageBackground(ctx, width, height, time) {
-  if (!gardenBackgroundImage.complete || gardenBackgroundImage.naturalWidth === 0) {
-    drawGardenBackground(ctx, width, height, time)
-    return
-  }
-
-  const imageRatio = gardenBackgroundImage.naturalWidth / gardenBackgroundImage.naturalHeight
-  const canvasRatio = width / height
-  let sourceX = 0
-  let sourceY = 0
-  let sourceWidth = gardenBackgroundImage.naturalWidth
-  let sourceHeight = gardenBackgroundImage.naturalHeight
-
-  if (imageRatio > canvasRatio) {
-    sourceWidth = gardenBackgroundImage.naturalHeight * canvasRatio
-    sourceX = (gardenBackgroundImage.naturalWidth - sourceWidth) / 2
+function drawGridOverlay(ctx, width, height, pitchGrid, gridDisplay) {
+  try {
+  if (gridDisplay === APP_CONFIG.canvas.gridDisplays.HIDDEN) {
+    // Background only.
+  } else if (gridDisplay === APP_CONFIG.canvas.gridDisplays.ORIGINAL) {
+    drawPitchGrid(ctx, pitchGrid, width, height)
   } else {
-    sourceHeight = gardenBackgroundImage.naturalWidth / canvasRatio
-    sourceY = (gardenBackgroundImage.naturalHeight - sourceHeight) / 2
+    drawImageCoordinateGrid(ctx, pitchGrid, width, height, {
+      showLabels: true
+    })
   }
-
-  ctx.drawImage(
-    gardenBackgroundImage,
-    sourceX,
-    sourceY,
-    sourceWidth,
-    sourceHeight,
-    0,
-    0,
-    width,
-    height
-  )
-
-  ctx.fillStyle = 'rgba(20, 30, 18, 0.08)'
-  ctx.fillRect(0, 0, width, height)
+  } catch (error) {
+    console.warn('Unable to draw grid overlay:', error)
+  }
 }

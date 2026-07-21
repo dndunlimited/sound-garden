@@ -5957,6 +5957,7 @@ imported by:
  &#8226;   <a href="#backend.app.engine">backend.app.engine</a>
  &#8226;   <a href="#backend.app.main">backend.app.main</a>
  &#8226;   <a href="#backend.app.models">backend.app.models</a>
+ &#8226;   <a href="#backend.app.storage">backend.app.storage</a>
 
   </div>
 
@@ -5986,7 +5987,11 @@ imports:
     <a href="#backend.app.api">backend.app.api</a>
  &#8226;   <a href="#backend.app.engine.gardenEngine">backend.app.engine.gardenEngine</a>
  &#8226;   <a href="#backend.app.engine.pitch_utils">backend.app.engine.pitch_utils</a>
+ &#8226;   <a href="#backend.app.storage.visualAssetStore">backend.app.storage.visualAssetStore</a>
  &#8226;   <a href="#fastapi">fastapi</a>
+ &#8226;   <a href="#fastapi.responses">fastapi.responses</a>
+ &#8226;   <a href="#os">os</a>
+ &#8226;   <a href="#threading">threading</a>
 
   </div>
   <div class="import">
@@ -6099,6 +6104,42 @@ imports:
   <div class="import">
 imported by:
     <a href="#backend.app.engine.gardenEngine">backend.app.engine.gardenEngine</a>
+
+  </div>
+
+</div>
+
+<div class="node">
+  <a name="backend.app.storage"></a>
+  <a target="code" href="-" type="text/plain"><tt>backend.app.storage</tt></a>
+<span class="moduletype">NamespacePackage</span>  <div class="import">
+imports:
+    <a href="#backend.app">backend.app</a>
+
+  </div>
+  <div class="import">
+imported by:
+    <a href="#backend.app.storage.visualAssetStore">backend.app.storage.visualAssetStore</a>
+
+  </div>
+
+</div>
+
+<div class="node">
+  <a name="backend.app.storage.visualAssetStore"></a>
+  <a target="code" href="///O:/VSProject/soundgarden/sound-garden/backend/app/storage/visualAssetStore.py" type="text/plain"><tt>backend.app.storage.visualAssetStore</tt></a>
+<span class="moduletype">SourceModule</span>  <div class="import">
+imports:
+    <a href="#backend.app.storage">backend.app.storage</a>
+ &#8226;   <a href="#json">json</a>
+ &#8226;   <a href="#mimetypes">mimetypes</a>
+ &#8226;   <a href="#pathlib">pathlib</a>
+ &#8226;   <a href="#uuid">uuid</a>
+
+  </div>
+  <div class="import">
+imported by:
+    <a href="#backend.app.api.routes">backend.app.api.routes</a>
 
   </div>
 
@@ -13286,7 +13327,8 @@ imports:
   </div>
   <div class="import">
 imported by:
-    <a href="#backend.app.main">backend.app.main</a>
+    <a href="#backend.app.api.routes">backend.app.api.routes</a>
+ &#8226;   <a href="#backend.app.main">backend.app.main</a>
  &#8226;   <a href="#fastapi">fastapi</a>
  &#8226;   <a href="#fastapi.openapi.utils">fastapi.openapi.utils</a>
 
@@ -15813,7 +15855,8 @@ imports:
   </div>
   <div class="import">
 imported by:
-    <a href="#bottle">bottle</a>
+    <a href="#backend.app.storage.visualAssetStore">backend.app.storage.visualAssetStore</a>
+ &#8226;   <a href="#bottle">bottle</a>
  &#8226;   <a href="#clr_loader.util.runtime_spec">clr_loader.util.runtime_spec</a>
  &#8226;   <a href="#fastapi.openapi.docs">fastapi.openapi.docs</a>
  &#8226;   <a href="#fastapi.routing">fastapi.routing</a>
@@ -16256,7 +16299,8 @@ imports:
   </div>
   <div class="import">
 imported by:
-    <a href="#bottle">bottle</a>
+    <a href="#backend.app.storage.visualAssetStore">backend.app.storage.visualAssetStore</a>
+ &#8226;   <a href="#bottle">bottle</a>
  &#8226;   <a href="#http.server">http.server</a>
  &#8226;   <a href="#starlette.responses">starlette.responses</a>
  &#8226;   <a href="#urllib.request">urllib.request</a>
@@ -17376,6 +17420,7 @@ imported by:
  &#8226;   <a href="#asyncio.selector_events">asyncio.selector_events</a>
  &#8226;   <a href="#asyncio.unix_events">asyncio.unix_events</a>
  &#8226;   <a href="#asyncio.windows_utils">asyncio.windows_utils</a>
+ &#8226;   <a href="#backend.app.api.routes">backend.app.api.routes</a>
  &#8226;   <a href="#bottle">bottle</a>
  &#8226;   <a href="#bz2">bz2</a>
  &#8226;   <a href="#cffi._imp_emulation">cffi._imp_emulation</a>
@@ -18024,6 +18069,7 @@ imported by:
     <a href="#_pyrepl.terminfo">_pyrepl.terminfo</a>
  &#8226;   <a href="#anyio._core._fileio">anyio._core._fileio</a>
  &#8226;   <a href="#backend.app.main">backend.app.main</a>
+ &#8226;   <a href="#backend.app.storage.visualAssetStore">backend.app.storage.visualAssetStore</a>
  &#8226;   <a href="#click._termui_impl">click._termui_impl</a>
  &#8226;   <a href="#clr_loader">clr_loader</a>
  &#8226;   <a href="#clr_loader.ffi">clr_loader.ffi</a>
@@ -28609,6 +28655,7 @@ imported by:
  &#8226;   <a href="#asyncio.proactor_events">asyncio.proactor_events</a>
  &#8226;   <a href="#asyncio.runners">asyncio.runners</a>
  &#8226;   <a href="#asyncio.unix_events">asyncio.unix_events</a>
+ &#8226;   <a href="#backend.app.api.routes">backend.app.api.routes</a>
  &#8226;   <a href="#bottle">bottle</a>
  &#8226;   <a href="#click.globals">click.globals</a>
  &#8226;   <a href="#concurrent.futures._base">concurrent.futures._base</a>
@@ -30348,7 +30395,8 @@ imports:
   </div>
   <div class="import">
 imported by:
-    <a href="#click.types">click.types</a>
+    <a href="#backend.app.storage.visualAssetStore">backend.app.storage.visualAssetStore</a>
+ &#8226;   <a href="#click.types">click.types</a>
  &#8226;   <a href="#fastapi.encoders">fastapi.encoders</a>
  &#8226;   <a href="#pydantic._internal._generate_schema">pydantic._internal._generate_schema</a>
  &#8226;   <a href="#pydantic.deprecated.json">pydantic.deprecated.json</a>

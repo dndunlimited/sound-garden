@@ -2,7 +2,13 @@ export const APP_CONFIG = {
   canvas: {
     width: 900,
     height: 600,
-    background: '#23285c'
+    background: '#23285c',
+    gridDisplays: {
+      BACKGROUND: 'background',
+      ORIGINAL: 'original',
+      HIDDEN: 'hidden'
+    },
+    defaultGridDisplay: 'background'
   },
 
   audio: {
@@ -29,12 +35,14 @@ export const APP_CONFIG = {
 
     soundTypes: {
       PITCH: 'pitch',
-      VIDEOG: 'videoG'
+      VIDEOG: 'videoG',
+      SAMPLE: 'sample'
     },
 
     soundTypeLabels: {
       pitch: 'Pitch',
-      videoG: 'videoG'
+      videoG: 'videoG',
+      sample: 'Uploaded'
     },
 
     defaultMode: 'noise'

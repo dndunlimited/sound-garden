@@ -20,8 +20,13 @@ export async function addNode(
   startY = y,
   plantType = 'glow_bloom',
   visualType = 'plant',
+  visualAssetId = null,
   isMuted = false,
-  soundType = 'pitch'
+  soundType = 'pitch',
+  sampleId = null,
+  samplePlaybackMode = 'pitched',
+  isGlowEnabled = true,
+  isMotionEnabled = true
 ) {
   const res = await api.post('/api/event', {
     type: 'add_node',
@@ -36,8 +41,13 @@ export async function addNode(
     startY,
     plantType,
     visualType,
+    visualAssetId,
     isMuted,
-    soundType
+    soundType,
+    sampleId,
+    samplePlaybackMode,
+    isGlowEnabled,
+    isMotionEnabled
   })
 
   return res.data
@@ -55,6 +65,10 @@ export async function fetchGardenState() {
 
 export async function resetGarden() {
   return api.post('/api/garden/reset')
+}
+
+export async function closeApp() {
+  return api.post('/api/app/close')
 }
 
 export async function removeLastNode() {

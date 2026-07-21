@@ -1,173 +1,315 @@
 <template>
   <div class="garden-wrapper">
-    <button class="reset-button" @click="reset">Reset Garden</button>
-    <label
-  v-if="selectedAudioMode === APP_CONFIG.audio.modes.HARMONICS"
-  class="sound-mode-control"
->
-  Harmonic Type:
-  <select v-model="selectedHarmonicType">
-    <option
-      v-for="interval in harmonicIntervals"
-      :key="interval.id"
-      :value="interval.id"
-    >
-      {{ interval.label }}
-    </option>
-  </select>
-</label>
-    <label>
-      Sound Mode:
-      <select v-model="selectedAudioMode">
-        <option :value="APP_CONFIG.audio.modes.HARMONICS">
-          Harmonics
-        </option>
-        <option :value="APP_CONFIG.audio.modes.TUNER">
-          Tuner
-        </option>
-        <option :value="APP_CONFIG.audio.modes.NOTES">
-          Notes
-        </option>
-        <option :value="APP_CONFIG.audio.modes.NOISE">
-          Noise
-        </option>
-      </select>
-    </label>
-    <label class="sound-type-control">
-      Sound Type:
-      <select v-model="selectedSoundType">
-        <option :value="APP_CONFIG.audio.soundTypes.PITCH">
-          Pitch
-        </option>
-        <option :value="APP_CONFIG.audio.soundTypes.VIDEOG">
-          videoG
-        </option>
-      </select>
-    </label>
-    <label class="visual-control">
-      Visual:
-      <select v-model="selectedVisualType">
-        <option value="plant">
-          Plant
-        </option>
-        <option value="mushroom">
-          Mushroom
-        </option>
-      </select>
-    </label>
-    <label
-      v-if="selectedVisualType === 'plant'"
-      class="visual-control"
-    >
-      Plant:
-      <select v-model="selectedPlantType">
-        <option value="random">
-          Random
-        </option>
-        <option
-          v-for="plant in PLANT_TYPES"
-          :key="plant.id"
-          :value="plant.id"
+    <div class="top-actions">
+      <button class="reset-button" @click="reset">Reset Garden</button>
+      <button class="close-button" @click="closeApplication">Close Application</button>
+    </div>
+    <div class="canvas-controls">
+        <label
+          v-if="selectedAudioMode === APP_CONFIG.audio.modes.HARMONICS"
+          class="control-field"
         >
-          {{ plant.label }}
-        </option>
-      </select>
-    </label>
-    <label
-      v-if="selectedVisualType === 'mushroom'"
-      class="visual-control"
-    >
-      Mushroom:
-      <select v-model="selectedMushroomType">
-        <option value="random">
-          Random
-        </option>
-        <option
-          v-for="mushroom in MUSHROOM_TYPES"
-          :key="mushroom.id"
-          :value="mushroom.id"
+          Harmonic Type:
+          <select v-model="selectedHarmonicType">
+            <option
+              v-for="interval in harmonicIntervals"
+              :key="interval.id"
+              :value="interval.id"
+            >
+              {{ interval.label }}
+            </option>
+          </select>
+        </label>
+        <label class="control-field">
+          Sound Mode:
+          <select v-model="selectedAudioMode">
+            <option :value="APP_CONFIG.audio.modes.HARMONICS">
+              Harmonics
+            </option>
+            <option :value="APP_CONFIG.audio.modes.TUNER">
+              Tuner
+            </option>
+            <option :value="APP_CONFIG.audio.modes.NOTES">
+              Notes
+            </option>
+            <option :value="APP_CONFIG.audio.modes.NOISE">
+              Noise
+            </option>
+          </select>
+        </label>
+        <label class="control-field">
+          Grid:
+          <select v-model="selectedGridDisplay">
+            <option :value="APP_CONFIG.canvas.gridDisplays.BACKGROUND">
+              Fantasy Overlay
+            </option>
+            <option :value="APP_CONFIG.canvas.gridDisplays.ORIGINAL">
+              Garden Overlay
+            </option>
+            <option :value="APP_CONFIG.canvas.gridDisplays.HIDDEN">
+              Hide Overlay
+            </option>
+          </select>
+        </label>
+        <label class="control-field">
+          Sound Type:
+          <select v-model="selectedSoundType">
+            <option :value="APP_CONFIG.audio.soundTypes.PITCH">
+              Pitch
+            </option>
+            <option :value="APP_CONFIG.audio.soundTypes.VIDEOG">
+              videoG
+            </option>
+            <option :value="APP_CONFIG.audio.soundTypes.SAMPLE">
+              Uploaded
+            </option>
+          </select>
+        </label>
+        <label class="control-field sound-upload-control">
+          Upload:
+          <input
+            type="file"
+            accept="audio/*"
+            @change="handleSoundUpload"
+          >
+        </label>
+        <label
+          v-if="selectedSoundType === APP_CONFIG.audio.soundTypes.SAMPLE"
+          class="control-field"
         >
-          {{ mushroom.label }}
-        </option>
-      </select>
-    </label>
-    <label class="audible-limit-control">
-      Max Audible:
-      <input
-        v-model.number="maxAudibleNodes"
-        type="number"
-        min="1"
-        :max="APP_CONFIG.audio.maxAudibleNodesLimit"
-      >
-    </label>
-    <label class="mute-placement-control">
-      <input
-        v-model="muteNewPlant"
-        type="checkbox"
-      >
-      Muted
-    </label>
-    <div class="pitch-controls">
-  <label v-if="selectedAudioMode === APP_CONFIG.audio.modes.NOTES">
-    Note:
-    <select v-model="selectedNote">
-      <option
-        v-for="note in pitchGrid?.notes || []"
-        :key="note"
-        :value="note"
-      >
-        {{ note }}
-      </option>
-    </select>
-  </label>
-
-  <label v-if="selectedAudioMode === APP_CONFIG.audio.modes.NOTES">
-    Octave:
-    <select v-model="selectedOctave">
-      <option
-        v-for="octave in pitchGrid?.octaves || []"
-        :key="octave"
-        :value="octave"
-      >
-        {{ octave }}
-      </option>
-    </select>
-  </label>
-</div>
-    <canvas
-       ref="canvas"
-       class="garden-canvas"
-       :width="APP_CONFIG.canvas.width"
-       :height="APP_CONFIG.canvas.height"
-       :style="canvasStyle"
-       @pointerdown="handlePointerDown"
-       @pointermove="handlePointerMove"
-       @pointerup="handlePointerUp"
-       @pointercancel="handlePointerCancel"
-       @contextmenu.prevent="handleRemoveLastNode"
-    ></canvas>
+          Saved Sound:
+          <select v-model="selectedSampleId">
+            <option value="">
+              None
+            </option>
+            <option
+              v-for="sound in savedSounds"
+              :key="sound.id"
+              :value="sound.id"
+            >
+              {{ sound.name }}
+            </option>
+          </select>
+        </label>
+        <label
+          v-if="selectedSoundType === APP_CONFIG.audio.soundTypes.SAMPLE"
+          class="control-field"
+        >
+          Playback:
+          <select v-model="selectedSamplePlaybackMode">
+            <option value="pitched">
+              Pitch Tracked
+            </option>
+            <option value="raw">
+              Raw File
+            </option>
+          </select>
+        </label>
+        <button
+          v-if="selectedSoundType === APP_CONFIG.audio.soundTypes.SAMPLE && selectedSampleId"
+          class="remove-sound-button"
+          type="button"
+          @click="handleRemoveSavedSound"
+        >
+          Remove Sound
+        </button>
+        <label class="control-field">
+          Visual:
+          <select v-model="selectedVisualType">
+            <option value="plant">
+              Plant
+            </option>
+            <option value="mushroom">
+              Mushroom
+            </option>
+            <option value="asset">
+              Uploaded Asset
+            </option>
+          </select>
+        </label>
+        <label class="control-field visual-option-control">
+          <input
+            v-model="isGlowEnabled"
+            type="checkbox"
+          >
+          Glow
+        </label>
+        <label class="control-field visual-option-control">
+          <input
+            v-model="isMotionEnabled"
+            type="checkbox"
+          >
+          Motion
+        </label>
+        <label
+          v-if="selectedVisualType === 'asset'"
+          class="control-field asset-upload-control"
+        >
+          Visual Upload:
+          <input
+            type="file"
+            accept="image/*"
+            @change="handleVisualAssetUpload"
+          >
+        </label>
+        <label
+          v-if="selectedVisualType === 'asset'"
+          class="control-field"
+        >
+          Asset:
+          <select v-model="selectedVisualAssetId">
+            <option value="">
+              None
+            </option>
+            <option
+              v-for="asset in visualAssets"
+              :key="asset.id"
+              :value="asset.id"
+            >
+              {{ asset.name }}
+            </option>
+          </select>
+        </label>
+        <button
+          v-if="selectedVisualType === 'asset' && selectedVisualAssetId"
+          class="remove-sound-button"
+          type="button"
+          @click="handleRemoveVisualAsset"
+        >
+          Remove Asset
+        </button>
+        <label
+          v-if="selectedVisualType === 'plant'"
+          class="control-field"
+        >
+          Plant:
+          <select v-model="selectedPlantType">
+            <option value="random">
+              Random
+            </option>
+            <option
+              v-for="plant in PLANT_TYPES"
+              :key="plant.id"
+              :value="plant.id"
+            >
+              {{ plant.label }}
+            </option>
+          </select>
+        </label>
+        <label
+          v-if="selectedVisualType === 'mushroom'"
+          class="control-field"
+        >
+          Mushroom:
+          <select v-model="selectedMushroomType">
+            <option value="random">
+              Random
+            </option>
+            <option
+              v-for="mushroom in MUSHROOM_TYPES"
+              :key="mushroom.id"
+              :value="mushroom.id"
+            >
+              {{ mushroom.label }}
+            </option>
+          </select>
+        </label>
+        <label class="control-field audible-limit-control">
+          Max Audible:
+          <input
+            v-model.number="maxAudibleNodes"
+            type="number"
+            min="1"
+            :max="APP_CONFIG.audio.maxAudibleNodesLimit"
+          >
+        </label>
+        <label class="control-field mute-placement-control">
+          <input
+            v-model="muteNewPlant"
+            type="checkbox"
+          >
+          Muted
+        </label>
+        <label
+          v-if="selectedAudioMode === APP_CONFIG.audio.modes.NOTES"
+          class="control-field"
+        >
+          Note:
+          <select v-model="selectedNote">
+            <option
+              v-for="note in pitchGrid?.notes || []"
+              :key="note"
+              :value="note"
+            >
+              {{ note }}
+            </option>
+          </select>
+        </label>
+        <label
+          v-if="selectedAudioMode === APP_CONFIG.audio.modes.NOTES"
+          class="control-field"
+        >
+          Octave:
+          <select v-model="selectedOctave">
+            <option
+              v-for="octave in pitchGrid?.octaves || []"
+              :key="octave"
+              :value="octave"
+            >
+              {{ octave }}
+            </option>
+          </select>
+        </label>
+    </div>
+    <div
+      class="canvas-stage"
+      :style="canvasStyle"
+    >
+      <canvas
+        ref="canvas"
+        class="garden-canvas"
+        :width="APP_CONFIG.canvas.width"
+        :height="APP_CONFIG.canvas.height"
+        @pointerdown="handlePointerDown"
+        @pointermove="handlePointerMove"
+        @pointerup="handlePointerUp"
+        @pointercancel="handlePointerCancel"
+        @contextmenu.prevent="handleRemoveLastNode"
+      ></canvas>
+    </div>
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted, watch } from 'vue'
 import { APP_CONFIG } from '../config/appConfig'
-import { addNode, fetchGardenState, resetGarden, fetchHarmonicIntervals, fetchPitchGrid, removeLastNode } from '../api/gardenApi'
+import { addNode, closeApp, fetchGardenState, resetGarden, fetchHarmonicIntervals, fetchPitchGrid, removeLastNode } from '../api/gardenApi'
 import { ensureAudio, updateAudio, clearAudio, startPreviewVoice, updatePreviewVoice, stopPreviewVoice } from '../audio/audioEngine'
 import { renderGarden } from '../visuals/canvasRenderer'
 import { getPlotCoordinates, getPointInPlot } from '../visuals/plotGeometry'
 import { PLANT_TYPES, RANDOM_PLANT_TYPE, getRandomPlantType } from '../visuals/plantCatalog'
 import { MUSHROOM_TYPES, RANDOM_MUSHROOM_TYPE, getRandomMushroomType } from '../visuals/mushroomCatalog'
+import { loadSavedSounds, removeSavedSound, saveUploadedSound } from '../audio/soundLibrary'
+import { fetchVisualAssets, removeVisualAsset, uploadVisualAsset } from '../api/visualAssetApi'
+import fantasyBackgroundUrl from '../assets/FantasyGardenNoGrid.png'
 
 const canvas = ref(null)
 const selectedAudioMode = ref(APP_CONFIG.audio.defaultMode)
+const selectedGridDisplay = ref(APP_CONFIG.canvas.defaultGridDisplay)
 const harmonicIntervals = ref([])
 const selectedHarmonicType = ref('perfect_fifth')
 const pitchGrid = ref(null)
 const selectedNote = ref('A')
 const selectedOctave = ref(4)
 const selectedSoundType = ref(APP_CONFIG.audio.soundTypes.PITCH)
+const savedSounds = ref([])
+const selectedSampleId = ref('')
+const selectedSamplePlaybackMode = ref('pitched')
 const selectedVisualType = ref('plant')
+const isGlowEnabled = ref(true)
+const isMotionEnabled = ref(true)
+const visualAssets = ref([])
+const selectedVisualAssetId = ref('')
 const selectedPlantType = ref(RANDOM_PLANT_TYPE)
 const selectedMushroomType = ref(RANDOM_MUSHROOM_TYPE)
 const maxAudibleNodes = ref(APP_CONFIG.audio.defaultMaxAudibleNodes)
@@ -178,7 +320,7 @@ const canvasStyle = {
   width: '100%',
   maxWidth: `${APP_CONFIG.canvas.width}px`,
   aspectRatio: `${APP_CONFIG.canvas.width} / ${APP_CONFIG.canvas.height}`,
-  background: APP_CONFIG.canvas.background
+  background: `${APP_CONFIG.canvas.background} url("${fantasyBackgroundUrl}") center / cover no-repeat`
 }
 
 let ctx
@@ -208,12 +350,21 @@ function getPitchSource(mode) {
 }
 
 function resolveVisualSelection() {
+  if (selectedVisualType.value === 'asset') {
+    return {
+      visualType: 'asset',
+      plantType: null,
+      visualAssetId: selectedVisualAssetId.value || null
+    }
+  }
+
   if (selectedVisualType.value === 'mushroom') {
     return {
       visualType: 'mushroom',
       plantType: selectedMushroomType.value === RANDOM_MUSHROOM_TYPE
         ? getRandomMushroomType()
-        : selectedMushroomType.value
+        : selectedMushroomType.value,
+      visualAssetId: null
     }
   }
 
@@ -221,12 +372,63 @@ function resolveVisualSelection() {
     visualType: 'plant',
     plantType: selectedPlantType.value === RANDOM_PLANT_TYPE
       ? getRandomPlantType()
-      : selectedPlantType.value
+      : selectedPlantType.value,
+    visualAssetId: null
   }
 }
 
 function getAudiblePlantCount() {
   return nodes.filter(node => !node.isMuted).length
+}
+
+async function handleSoundUpload(event) {
+  const file = event.target.files?.[0]
+
+  if (!file) return
+
+  try {
+    const sound = await saveUploadedSound(file)
+
+    savedSounds.value = await loadSavedSounds()
+    selectedSampleId.value = sound.id
+    selectedSoundType.value = APP_CONFIG.audio.soundTypes.SAMPLE
+  } catch (error) {
+    console.warn('Unable to save uploaded sound:', error)
+  } finally {
+    event.target.value = ''
+  }
+}
+
+async function handleRemoveSavedSound() {
+  if (!selectedSampleId.value) return
+
+  savedSounds.value = await removeSavedSound(selectedSampleId.value)
+  selectedSampleId.value = savedSounds.value[0]?.id || ''
+}
+
+async function handleVisualAssetUpload(event) {
+  const file = event.target.files?.[0]
+
+  if (!file) return
+
+  try {
+    const asset = await uploadVisualAsset(file)
+
+    visualAssets.value = await fetchVisualAssets()
+    selectedVisualAssetId.value = asset.id
+    selectedVisualType.value = 'asset'
+  } catch (error) {
+    console.warn('Unable to save visual asset:', error)
+  } finally {
+    event.target.value = ''
+  }
+}
+
+async function handleRemoveVisualAsset() {
+  if (!selectedVisualAssetId.value) return
+
+  visualAssets.value = await removeVisualAsset(selectedVisualAssetId.value)
+  selectedVisualAssetId.value = visualAssets.value[0]?.id || ''
 }
 
 function getCanvasPoint(event) {
@@ -366,6 +568,10 @@ function updatePreviewFromPoint(point) {
 onMounted(async () => {
   ctx = canvas.value.getContext('2d')
 
+  savedSounds.value = await loadSavedSounds()
+  selectedSampleId.value = savedSounds.value[0]?.id || ''
+  visualAssets.value = await fetchVisualAssets()
+  selectedVisualAssetId.value = visualAssets.value[0]?.id || ''
   harmonicIntervals.value = await fetchHarmonicIntervals()
   pitchGrid.value = await fetchPitchGrid()
 
@@ -387,6 +593,17 @@ watch(maxAudibleNodes, value => {
 async function handlePointerDown(event) {
   if (!event.isPrimary || event.button !== 0) return
 
+  if (
+    selectedSoundType.value === APP_CONFIG.audio.soundTypes.SAMPLE &&
+    !selectedSampleId.value
+  ) {
+    return
+  }
+
+  if (selectedVisualType.value === 'asset' && !selectedVisualAssetId.value) {
+    return
+  }
+
   await ensureAudio()
 
   const point = clampCanvasPoint(getCanvasPoint(event))
@@ -398,7 +615,16 @@ async function handlePointerDown(event) {
     pitchSource,
     plantType: visualSelection.plantType,
     visualType: visualSelection.visualType,
+    visualAssetId: visualSelection.visualAssetId,
+    isGlowEnabled: isGlowEnabled.value,
+    isMotionEnabled: isMotionEnabled.value,
     soundType: selectedSoundType.value,
+    sampleId: selectedSoundType.value === APP_CONFIG.audio.soundTypes.SAMPLE
+      ? selectedSampleId.value
+      : null,
+    samplePlaybackMode: selectedSoundType.value === APP_CONFIG.audio.soundTypes.SAMPLE
+      ? selectedSamplePlaybackMode.value
+      : 'pitched',
     isMuted: muteNewPlant.value,
     isAudiblePreview: getAudiblePlantCount() < maxAudibleNodes.value,
     startX: point.x,
@@ -413,7 +639,9 @@ async function handlePointerDown(event) {
   if (dragState.isAudiblePreview && !dragState.isMuted) {
     startPreviewVoice(
       pitch.frequency ?? getFrequency(pitch.note, pitch.octave),
-      dragState.soundType
+      dragState.soundType,
+      dragState.sampleId,
+      dragState.samplePlaybackMode
     )
   }
 }
@@ -454,8 +682,13 @@ async function handlePointerUp(event) {
       dragState.startY,
       dragState.plantType,
       dragState.visualType,
+      dragState.visualAssetId,
       dragState.isMuted,
-      dragState.soundType
+      dragState.soundType,
+      dragState.sampleId,
+      dragState.samplePlaybackMode,
+      dragState.isGlowEnabled,
+      dragState.isMotionEnabled
     )
   } finally {
     stopPreviewVoice()
@@ -464,13 +697,8 @@ async function handlePointerUp(event) {
 
   const state = await fetchGardenState()
 
-  //console.log('State after add:', state)
-  //console.log('Nodes from backend:', state.nodes)
-
   nodes = state.nodes
- //console.log('Nodes count:', nodes.length)
   updateAudio(nodes, selectedAudioMode.value, maxAudibleNodes.value)
-
 }
 
 function handlePointerCancel(event) {
@@ -506,8 +734,15 @@ async function reset() {
     nodes,
     APP_CONFIG.canvas.width,
     APP_CONFIG.canvas.height,
-    selectedAudioMode.value
+    selectedAudioMode.value,
+    pitchGrid.value,
+    selectedGridDisplay.value
   )
+}
+
+async function closeApplication() {
+  clearAudio()
+  await closeApp()
 }
 
 // The animation loop continuously renders the garden state on the canvas
@@ -522,8 +757,13 @@ function animationLoop() {
       y: dragState.y,
       frequency: previewPitch.frequency ?? getFrequency(previewPitch.note, previewPitch.octave),
       soundType: dragState.soundType,
+      sampleId: dragState.sampleId,
+      samplePlaybackMode: dragState.samplePlaybackMode,
       plantType: dragState.plantType,
       visualType: dragState.visualType,
+      visualAssetId: dragState.visualAssetId,
+      isGlowEnabled: dragState.isGlowEnabled,
+      isMotionEnabled: dragState.isMotionEnabled,
       isMuted: dragState.isMuted
     }]
     : []
@@ -534,48 +774,16 @@ function animationLoop() {
     APP_CONFIG.canvas.width,
     APP_CONFIG.canvas.height,
     selectedAudioMode.value,
-    pitchGrid.value
+    pitchGrid.value,
+    selectedGridDisplay.value
   )
 
   requestAnimationFrame(animationLoop)
 }
-async function startLoop() {
-  while (true) {
-    const state = await fetchGardenState()
-    nodes = state.nodes
-    
-    console.log('Nodes from backend:', nodes)
-
-    updateAudio(nodes, selectedAudioMode.value, maxAudibleNodes.value)
-    console.log('Audio updated')
-
-    renderGarden(ctx, nodes, APP_CONFIG.canvas.width, APP_CONFIG.canvas.height)
-
-    await new Promise(resolve => setTimeout(resolve, 200))
-  }
-} 
 </script>
 
 <!--  CSS FOR CANVAS AND CONTROLS -->
 <style scoped>
-.pitch-controls {
-  display: flex;
-  gap: 12px;
-  align-items: center;
-  color: rgb(0, 0, 0);
-  margin-bottom: 8px;
-  background: white;
-}
-
-.pitch-controls label {
-  display: flex;
-  gap: 6px;
-  align-items: center;
-}
-
-.pitch-controls select {
-  padding: 4px 8px;
-}
 .garden-wrapper {
   display: flex;
   flex-direction: column;
@@ -583,9 +791,23 @@ async function startLoop() {
   padding: 16px;
 }
 
-.garden-canvas {
+.top-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.canvas-stage {
+  position: relative;
+  overflow: hidden;
   border: 2px solid #185f42;
   border-radius: 15px;
+  display: block;
+}
+
+.garden-canvas {
+  width: 100%;
+  height: 100%;
   cursor: pointer;
   display: block;
   touch-action: none;
@@ -596,57 +818,84 @@ async function startLoop() {
   padding: 8px 12px;
 }
 
-.sound-mode-control {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-  color: rgb(94, 71, 146);
-  margin-bottom: 8px;
+.close-button {
+  width: fit-content;
+  padding: 8px 12px;
+  border: 1px solid rgba(92, 38, 38, 0.42);
+  border-radius: 4px;
+  background: rgba(255, 242, 242, 0.94);
+  color: rgb(78, 30, 30);
+  cursor: pointer;
 }
 
-.sound-mode-control select {
+.canvas-controls {
+  display: flex;
+  gap: 8px;
+  row-gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-start;
+  width: min(900px, 100%);
+  padding: 10px 12px;
+  border: 1px solid rgba(28, 73, 48, 0.2);
+  border-radius: 8px;
+  background: rgba(246, 251, 241, 0.94);
+  box-shadow: 0 8px 18px rgba(18, 55, 35, 0.14);
+}
+
+.control-field {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  color: rgb(21, 44, 31);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.control-field select,
+.control-field input[type='number'] {
   padding: 4px 8px;
+  border: 1px solid rgba(28, 73, 48, 0.34);
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.84);
+  color: rgb(20, 38, 28);
+  font: inherit;
 }
 
-.sound-type-control {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-  color: rgb(0, 0, 0);
+.control-field select {
+  max-width: 132px;
 }
 
-.sound-type-control select {
+.sound-upload-control input,
+.asset-upload-control input {
+  max-width: 150px;
+  font-size: 12px;
+}
+
+.remove-sound-button {
   padding: 4px 8px;
-}
-
-.visual-control {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-  color: rgb(0, 0, 0);
-}
-
-.visual-control select {
-  padding: 4px 8px;
-}
-
-.audible-limit-control {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-  color: rgb(0, 0, 0);
+  border: 1px solid rgba(92, 38, 38, 0.34);
+  border-radius: 4px;
+  background: rgba(255, 244, 244, 0.86);
+  color: rgb(78, 30, 30);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1;
+  cursor: pointer;
 }
 
 .audible-limit-control input {
   width: 56px;
-  padding: 4px 8px;
 }
 
 .mute-placement-control {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-  color: rgb(0, 0, 0);
+  padding-left: 2px;
+}
+
+.mute-placement-control input {
+  margin: 0;
 }
 
 </style>

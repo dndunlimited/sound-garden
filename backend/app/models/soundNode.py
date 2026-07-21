@@ -14,6 +14,11 @@ class SoundNode:
         sound_type="pitch",
         plant_type="glow_bloom",
         visual_type="plant",
+        visual_asset_id=None,
+        sample_id=None,
+        sample_playback_mode="pitched",
+        is_glow_enabled=True,
+        is_motion_enabled=True,
         is_muted=False
     ):
         self.id = id
@@ -28,6 +33,11 @@ class SoundNode:
         self.sound_type = sound_type
         self.plant_type = plant_type
         self.visual_type = visual_type
+        self.visual_asset_id = visual_asset_id
+        self.sample_id = sample_id
+        self.sample_playback_mode = sample_playback_mode
+        self.is_glow_enabled = is_glow_enabled
+        self.is_motion_enabled = is_motion_enabled
         self.is_muted = is_muted
 
     def to_dict(self):
@@ -44,5 +54,10 @@ class SoundNode:
             "soundType": self.sound_type,
             "plantType": self.plant_type,
             "visualType": self.visual_type,
+            "visualAssetId": self.visual_asset_id,
+            "sampleId": self.sample_id,
+            "samplePlaybackMode": self.sample_playback_mode,
+            "isGlowEnabled": self.is_glow_enabled,
+            "isMotionEnabled": self.is_motion_enabled,
             "isMuted": self.is_muted
         }

@@ -9,22 +9,44 @@ class SoundEngine:
         canvas_width = 900
         canvas_height = 600
         plot = {
-            "top_left": (0.205, 0.53),
-            "top_right": (0.795, 0.53),
-            "bottom_left": (0.055, 0.945),
-            "bottom_right": (0.945, 0.945)
+            "top_left": (0.49, 0.65),
+            "top_right": (0.64, 0.65),
+            "bottom_left": (-0.02, 0.9),
+            "bottom_right": (1.03, 0.93),
+            "left_control": (0.2, 0.87),
+            "right_control": (0.78, 0.8)
         }
-        top_y = plot["top_left"][1] * canvas_height
-        bottom_y = plot["bottom_left"][1] * canvas_height
-        v = max(0, min(1, (y - top_y) / (bottom_y - top_y)))
-        left_x = (
-            plot["top_left"][0] +
-            (plot["bottom_left"][0] - plot["top_left"][0]) * v
-        ) * canvas_width
-        right_x = (
-            plot["top_right"][0] +
-            (plot["bottom_right"][0] - plot["top_right"][0]) * v
-        ) * canvas_width
+
+        def quadratic_point(start, control, end, amount):
+            inverse = 1 - amount
+            return (
+                inverse * inverse * start[0] + 2 * inverse * amount * control[0] + amount * amount * end[0],
+                inverse * inverse * start[1] + 2 * inverse * amount * control[1] + amount * amount * end[1]
+            )
+
+        def plot_side_points(amount):
+            return (
+                quadratic_point(plot["top_left"], plot["left_control"], plot["bottom_left"], amount),
+                quadratic_point(plot["top_right"], plot["right_control"], plot["bottom_right"], amount)
+            )
+
+        lower = 0
+        upper = 1
+
+        for _ in range(24):
+            middle = (lower + upper) / 2
+            left, right = plot_side_points(middle)
+            center_y = ((left[1] + right[1]) / 2) * canvas_height
+
+            if center_y < y:
+                lower = middle
+            else:
+                upper = middle
+
+        v = max(0, min(1, (lower + upper) / 2))
+        left, right = plot_side_points(v)
+        left_x = left[0] * canvas_width
+        right_x = right[0] * canvas_width
         u = max(0, min(1, (x - left_x) / (right_x - left_x)))
 
         return u, v
@@ -74,22 +96,23 @@ class SoundEngine:
         return note, octave, frequency
 
     def handle_event(self, event):
-        
-        print("HANDLE EVENT:", event)
-
         if event["type"] == "remove_last_node":
             return self.remove_last_node()
 
         if event["type"] == "add_node":
-            audio_mode = event.get("audioMode", "notes")
+            audio_mode = event.get("audioMode", "noise")
             harmonic_type = event.get("harmonicType", "perfect_fifth")
             sound_type = event.get("soundType", "pitch")
             plant_type = event.get("plantType", "glow_bloom")
             visual_type = event.get("visualType", "plant")
+            visual_asset_id = event.get("visualAssetId")
+            sample_id = event.get("sampleId")
+            sample_playback_mode = event.get("samplePlaybackMode", "pitched")
+            is_glow_enabled = bool(event.get("isGlowEnabled", True))
+            is_motion_enabled = bool(event.get("isMotionEnabled", True))
             is_muted = bool(event.get("isMuted", False))
 
             raw_frequency = 200 + event["x"]
-            quantized_frequency = PitchUtils.quantize_x_to_pitch(event["x"])
             note = event.get("note", "A")
             octave = int(event.get("octave", 4))
 
@@ -123,13 +146,14 @@ class SoundEngine:
                 sound_type=sound_type,
                 plant_type=plant_type,
                 visual_type=visual_type,
+                visual_asset_id=visual_asset_id,
+                sample_id=sample_id,
+                sample_playback_mode=sample_playback_mode,
+                is_glow_enabled=is_glow_enabled,
+                is_motion_enabled=is_motion_enabled,
                 is_muted=is_muted
             )
-            print("CREATING NODE:", node)
             self.nodes.append(node)
-            print("CURRENT NODES:", self.nodes)
-            return {"status": "ok", "node": node}
-
             return {
                 "status": "ok",
                 "node": node

@@ -54,4 +54,4 @@ if __name__ == "__main__":
         traceback.print_exc()
 
     finally:
-        input("\nPress Enter to exit...")
+        print("Sound Garden closed.")
